@@ -33,7 +33,7 @@ SCAN_INTERVAL = timedelta(minutes=1)
 SENSOR_SCHEMA = vol.Schema({
     vol.Required(CONF_STOP_ID): cv.string,
     vol.Optional(CONF_STOP_NAME): cv.string,
-    # vol.Optional(CONF_BUS_FILTER): cv.ensure_list_csv,
+    vol.Optional(CONF_BUS_FILTER): cv.ensure_list_csv,
 })
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
@@ -56,16 +56,24 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     add_entities(sensors, True)
 
 
-
-
-
 def parse_datetime(json: str) -> str:
+    """
+    Parse a date string from the AtB REST API and return it's ISO representation.
+    The API does not return timezone, but it is always Europe/Oslo.
+    :param json: The JSON representation of a naive datetime from the AtB API.
+    :return: A timezone aware ISO formatted string.
+    """
     naive: datetime = datetime.fromisoformat(json)
     aware: datetime = tz.localize(naive)
     return aware.isoformat()
 
 
 class AtbStopSensor(Entity):
+    """
+    This sensor fetches and stores all available data from the API.
+    The name is fetched from the API, but can be overridden using 'name'.
+    The state is the time of the next expected departure.
+    """
 
     def __init__(self, hass, device, stop_id, stop_name):
         self._data = {}
@@ -108,10 +116,15 @@ class AtbStopSensor(Entity):
         self._state = parse_datetime(self._data['departures'][0]['registeredDepartureTime'])
         length = min(len(self._data['departures']), len(self.departure_sensors))
         for index in range(0, length):
-            self.departure_sensors[index].update_state(self._data['departures'][index])
+            self.departure_sensors[index].update_sensor(self._data['departures'][index])
 
 
 class AtbDepartureSensor(Entity):
+    """
+    This sensor exposes a single departure from a given stop.
+    The name is the bus line number.
+    The state is the expected time of departure.
+    """
 
     def __init__(self, hass, device: str):
         self._name = None
@@ -121,6 +134,7 @@ class AtbDepartureSensor(Entity):
         self.entity_id = generate_entity_id(ENTITY_ID_FORMAT, device, hass=hass)
 
     def should_poll(self) -> bool:
+        """Disable polling, this sensor is updated by its parent AtbStopSensor"""
         return False
 
     @property
@@ -148,7 +162,8 @@ class AtbDepartureSensor(Entity):
         """Return the state attributes of the sensor."""
         return self._data
 
-    def update_state(self, json):
+    def update_sensor(self, json):
+        """ Manually update the sensor"""
         self._data = json
         self._state = parse_datetime(self._data['registeredDepartureTime'])
         self._name = json['line']
