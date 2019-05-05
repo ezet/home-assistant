@@ -1,0 +1,8 @@
+{
+  "domain": "atb",
+  "name": "AtB Buss",
+  "documentation": "https://www.example.com",
+  "dependencies": [],
+  "codeowners": [],
+  "requirements": []
+}
