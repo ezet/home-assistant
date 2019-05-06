@@ -2,7 +2,7 @@
 Support for AtB Bus information from https://atbapi.tar.io/.
 """
 import logging
-from datetime import timedelta, datetime
+from datetime import datetime
 from typing import List
 
 import pytz
