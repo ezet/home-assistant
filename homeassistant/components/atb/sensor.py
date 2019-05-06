@@ -29,8 +29,6 @@ tz = pytz.timezone(TIMEZONE)
 
 ICON = 'mdi:bus'
 
-SCAN_INTERVAL = timedelta(minutes=1)
-
 SENSOR_SCHEMA = vol.Schema({
     vol.Required(CONF_STOP_ID): cv.string,
     vol.Optional(CONF_STOP_NAME): cv.string,
@@ -124,7 +122,6 @@ class AtbStopSensor(Entity):
             if not self._bus_filter or int(departure['line']) in self._bus_filter:
                 self._state = parse_datetime(departure['registeredDepartureTime'])
                 break
-        # self._state = parse_datetime(self._data['departures'][0]['registeredDepartureTime'])
         length = min(len(self._data['departures']), len(self.departure_sensors))
         for index in range(0, length):
             self.departure_sensors[index].update_sensor(self._data['departures'][index])
